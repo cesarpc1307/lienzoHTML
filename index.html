@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Visor HTML — edita código HTML con una barra de herramientas y previsualiza en tiempo real para PC y Móvil, respetando tu diseño original." />
+  <title>Visor HTML</title>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- ===== HEADER ===== -->
+    <header>
+      <div class="header-brand">
+        <div class="logo-icon" aria-hidden="true">⟨⟩</div>
+        <h1>Visor <span>HTML</span></h1>
+      </div>
+
+      <div class="device-toggle" role="group" aria-label="Cambiar vista de dispositivo">
+        <button id="btn-pc" class="active" aria-pressed="true">💻 Vista PC</button>
+        <button id="btn-mobile" aria-pressed="false">📱 Vista Móvil</button>
+      </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main>
+
+      <!-- LEFT PANEL: Editor -->
+      <section class="panel-editor" aria-label="Panel de edición de código HTML">
+
+        <!-- Toolbar -->
+        <div class="editor-toolbar" role="toolbar" aria-label="Herramientas de formato HTML">
+
+          <div class="toolbar-group">
+            <select id="sel-heading" class="tb-select" title="Aplicar formato de bloque a la selección o línea actual">
+              <option value="" selected disabled>Formato ▾</option>
+              <option value="p">Párrafo</option>
+              <option value="h1">Título 1</option>
+              <option value="h2">Título 2</option>
+              <option value="h3">Título 3</option>
+              <option value="h4">Título 4</option>
+            </select>
+          </div>
+
+          <div class="toolbar-group">
+            <button type="button" class="tb-btn" id="btn-bold" title="Negrita (Ctrl+B)"><strong>B</strong></button>
+            <button type="button" class="tb-btn" id="btn-italic" title="Cursiva (Ctrl+I)"><em>I</em></button>
+            <button type="button" class="tb-btn" id="btn-underline" title="Subrayado (Ctrl+U)"><u>U</u></button>
+            <button type="button" class="tb-btn" id="btn-strike" title="Tachado"><s>S</s></button>
+          </div>
+
+          <div class="toolbar-group">
+            <div class="tb-color-btn-wrap">
+              <button type="button" class="tb-btn" id="btn-text-color" title="Color de texto">🎨 Texto</button>
+              <div class="color-popover" id="popover-text-color" hidden>
+                <div class="color-popover-row">
+                  <input type="color" id="picker-text-color" value="#1e293b" aria-label="Selector de color de texto" />
+                  <input type="text" id="hex-text-color" class="hex-input" value="#1e293b" maxlength="7" aria-label="Código hexadecimal" />
+                </div>
+                <div class="color-swatches" id="swatches-text-color"></div>
+                <div class="color-popover-actions">
+                  <button type="button" class="tb-btn tb-btn-small" id="btn-remove-text-color">Quitar color</button>
+                  <button type="button" class="tb-btn tb-btn-primary tb-btn-small" id="btn-apply-text-color">Aplicar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="tb-color-btn-wrap">
+              <button type="button" class="tb-btn" id="btn-bg-color" title="Color de resaltado / fondo">🖍️ Fondo</button>
+              <div class="color-popover" id="popover-bg-color" hidden>
+                <div class="color-popover-row">
+                  <input type="color" id="picker-bg-color" value="#fde047" aria-label="Selector de color de fondo" />
+                  <input type="text" id="hex-bg-color" class="hex-input" value="#fde047" maxlength="7" aria-label="Código hexadecimal" />
+                </div>
+                <div class="color-swatches" id="swatches-bg-color"></div>
+                <div class="color-popover-actions">
+                  <button type="button" class="tb-btn tb-btn-small" id="btn-remove-bg-color">Quitar color</button>
+                  <button type="button" class="tb-btn tb-btn-primary tb-btn-small" id="btn-apply-bg-color">Aplicar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-group">
+            <button type="button" class="tb-btn" id="btn-ul" title="Lista con viñetas">• Lista</button>
+            <button type="button" class="tb-btn" id="btn-ol" title="Lista numerada">1. Lista</button>
+          </div>
+
+          <div class="toolbar-group">
+            <button type="button" class="tb-btn" id="btn-link" title="Insertar enlace">🔗 Enlace</button>
+            <button type="button" class="tb-btn" id="btn-table" title="Insertar tabla (elige filas y columnas)">📊 Tabla</button>
+            <button type="button" class="tb-btn" id="btn-table-row" title="Añadir una fila a la tabla más cercana al cursor">➕ Fila</button>
+          </div>
+
+          <div class="toolbar-group">
+            <button type="button" class="tb-btn" id="btn-clean" title="Quita el formato (negrita, cursiva, color, enlace, etc.) del texto seleccionado, incluida la etiqueta que lo envuelve">🧹 Formato</button>
+            <button type="button" class="tb-btn" id="btn-beautify" title="Reorganiza la indentación del código para que se lea ordenado. No cambia el diseño, solo el orden visual del código">🧩 Indentar</button>
+          </div>
+
+          <div class="toolbar-group tb-group-end">
+            <button type="button" class="tb-btn tb-btn-copy" id="btn-copy" title="Copiar todo el HTML al portapapeles">📋 Copiar</button>
+            <button type="button" class="tb-btn tb-btn-danger" id="btn-clear-all" title="Borrar todo el contenido">🗑️ Limpiar todo</button>
+          </div>
+        </div>
+
+        <!-- Code HTML Editor (única fuente de verdad) -->
+        <div class="code-editor-wrapper">
+          <textarea
+            id="code-editor"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="Escribe o pega tu código HTML aquí. Se previsualizará tal cual, respetando tu diseño…"
+          ></textarea>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Preview -->
+      <section class="panel-preview" aria-label="Panel de previsualización">
+        <div class="panel-preview-header">
+          <span>Previsualización</span>
+          <span class="device-label" id="device-label">💻 PC — 100%</span>
+        </div>
+
+        <div class="preview-canvas">
+          <div class="device-container mode-pc" id="device-container">
+            <iframe
+              id="preview-frame"
+              title="Previsualización del contenido HTML"
+              sandbox="allow-scripts"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== MODAL: Insertar tabla ===== -->
+  <div class="modal-overlay" id="modal-table" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-table-title">
+      <h2 id="modal-table-title">Insertar tabla</h2>
+
+      <div class="modal-field">
+        <label for="input-rows">Filas de datos</label>
+        <input type="number" id="input-rows" min="1" max="50" value="3" />
+      </div>
+      <div class="modal-field">
+        <label for="input-cols">Columnas</label>
+        <input type="number" id="input-cols" min="1" max="20" value="3" />
+      </div>
+      <div class="modal-field modal-field-checkbox">
+        <label><input type="checkbox" id="input-header" checked /> Incluir fila de encabezado</label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="tb-btn" id="btn-table-cancel">Cancelar</button>
+        <button type="button" class="tb-btn tb-btn-primary" id="btn-table-insert">Insertar tabla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Insertar enlace ===== -->
+  <div class="modal-overlay" id="modal-link" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-link-title">
+      <h2 id="modal-link-title">Insertar enlace</h2>
+
+      <div class="modal-field">
+        <label for="input-link-url">URL</label>
+        <input type="url" id="input-link-url" placeholder="https://ejemplo.com" />
+      </div>
+      <div class="modal-field">
+        <label for="input-link-text">Texto del enlace (si no hay selección)</label>
+        <input type="text" id="input-link-text" placeholder="Texto visible" />
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="tb-btn" id="btn-link-cancel">Cancelar</button>
+        <button type="button" class="tb-btn tb-btn-primary" id="btn-link-insert">Insertar enlace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Logic -->
+  <script src="js/app.js"></script>
+</body>
+</html>
