@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Visor HTML — edita código HTML con una barra de herramientas y previsualiza en tiempo real para PC y Móvil, respetando tu diseño original." />
-  <title>Visor HTML</title>
+  <meta name="description" content="Lienzo HTML — edita código HTML con una barra de herramientas y previsualízalo en tiempo real en PC, tablet y celular, respetando tu diseño original." />
+  <title>Lienzo HTML</title>
 
   <!-- App Styles -->
   <link rel="stylesheet" href="css/styles.css" />
@@ -17,12 +17,18 @@
     <header>
       <div class="header-brand">
         <div class="logo-icon" aria-hidden="true">⟨⟩</div>
-        <h1>Visor <span>HTML</span></h1>
+        <h1>Lienzo <span>HTML</span></h1>
       </div>
 
-      <div class="device-toggle" role="group" aria-label="Cambiar vista de dispositivo">
-        <button id="btn-pc" class="active" aria-pressed="true">💻 Vista PC</button>
-        <button id="btn-mobile" aria-pressed="false">📱 Vista Móvil</button>
+      <div class="header-actions">
+        <div class="device-toggle" role="group" aria-label="Cambiar vista de dispositivo">
+          <button id="btn-pc" class="active" aria-pressed="true">💻 PC</button>
+          <button id="btn-mobile" aria-pressed="false">📱 Móvil</button>
+        </div>
+
+        <button type="button" id="btn-theme-toggle" class="theme-toggle-btn" title="Cambiar entre tema claro y oscuro (la previsualización siempre queda en blanco)">
+          <span id="theme-toggle-icon">🌙</span>
+        </button>
       </div>
     </header>
 
@@ -30,7 +36,7 @@
     <main>
 
       <!-- LEFT PANEL: Editor -->
-      <section class="panel-editor" aria-label="Panel de edición de código HTML">
+      <section class="panel-editor" id="panel-editor" aria-label="Panel de edición de código HTML">
 
         <!-- Toolbar -->
         <div class="editor-toolbar" role="toolbar" aria-label="Herramientas de formato HTML">
@@ -119,11 +125,39 @@
         </div>
       </section>
 
+      <!-- RESIZER -->
+      <div class="panel-resizer" id="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionar editor y previsualización" tabindex="0"></div>
+
       <!-- RIGHT PANEL: Preview -->
       <section class="panel-preview" aria-label="Panel de previsualización">
         <div class="panel-preview-header">
           <span>Previsualización</span>
-          <span class="device-label" id="device-label">💻 PC — 100%</span>
+          <div class="preview-header-right">
+            <select id="sel-device-preset" class="tb-select device-preset-select" title="Elegir resolución" hidden>
+              <optgroup label="Teléfonos">
+                <option value="320x568">iPhone SE (1.ª gen) — 320×568</option>
+                <option value="375x667" selected>iPhone SE / 6 / 7 / 8 — 375×667</option>
+                <option value="390x844">iPhone 12 / 13 / 14 — 390×844</option>
+                <option value="393x852">iPhone 15 / 16 Pro — 393×852</option>
+                <option value="428x926">iPhone 12 / 13 Pro Max — 428×926</option>
+                <option value="430x932">iPhone 15 / 16 Pro Max — 430×932</option>
+                <option value="360x800">Samsung Galaxy S20 / S21 — 360×800</option>
+                <option value="384x854">Samsung Galaxy S22 Ultra — 384×854</option>
+                <option value="393x873">Samsung Galaxy S23 — 393×873</option>
+                <option value="393x851">Google Pixel 5 / 6 — 393×851</option>
+                <option value="412x915">Google Pixel 7 / 8 — 412×915</option>
+                <option value="360x640">Android genérico pequeño — 360×640</option>
+                <option value="412x892">Android genérico grande — 412×892</option>
+              </optgroup>
+              <optgroup label="Tablets">
+                <option value="768x1024">iPad Mini / Air (vertical) — 768×1024</option>
+                <option value="834x1194">iPad Pro 11" (vertical) — 834×1194</option>
+                <option value="800x1280">Tablet Android (vertical) — 800×1280</option>
+                <option value="1024x768">iPad (horizontal) — 1024×768</option>
+              </optgroup>
+            </select>
+            <span class="device-label" id="device-label">💻 PC — 100%</span>
+          </div>
         </div>
 
         <div class="preview-canvas">

@@ -1,5 +1,5 @@
 /* ============================================
-   VISOR HTML
+   LIENZO HTML
    Application Logic
    ============================================
    Arquitectura: una sola fuente de verdad (el textarea
@@ -22,6 +22,14 @@
   const deviceLabel     = document.getElementById('device-label');
   const btnPC           = document.getElementById('btn-pc');
   const btnMobile       = document.getElementById('btn-mobile');
+  const selDevicePreset = document.getElementById('sel-device-preset');
+
+  const panelEditor   = document.getElementById('panel-editor');
+  const panelResizer  = document.getElementById('panel-resizer');
+  const mainEl        = document.querySelector('main');
+
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  const themeToggleIcon = document.getElementById('theme-toggle-icon');
 
   const btnCopy      = document.getElementById('btn-copy');
   const btnClearAll  = document.getElementById('btn-clear-all');
@@ -40,6 +48,8 @@
 
   const modalTable  = document.getElementById('modal-table');
   const modalLink   = document.getElementById('modal-link');
+
+  const STORAGE_PREFIX = 'lienzo-html-';
 
   // Preset color palette (24 colors covering neutrals + a full hue wheel)
   const PALETTE = [
@@ -203,7 +213,7 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o
   // para no pisar el diseño que ya trae tu HTML.
   const MINIMAL_PREVIEW_CSS =
     '<style>*,*::before,*::after{box-sizing:border-box;}' +
-    'body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}' +
+    'body{margin:0;background:#ffffff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}' +
     'img,video{max-width:100%;height:auto;}</style>';
 
   function isFullDocument(html) {
@@ -641,28 +651,155 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o
   });
 
   // ========================================
-  //  DEVICE TOGGLE
+  //  DEVICE TOGGLE + PRESETS DE RESOLUCIÓN
   // ========================================
+  // Etiqueta legible para cada preset "AxB" del <select>. El value ya trae
+  // el ancho y alto en px; aquí solo mapeamos si cuenta como "tablet"
+  // (marco sin muesca) según su ancho.
+  function isTabletWidth(width) {
+    return width >= 600;
+  }
+
+  function applyDevicePreset() {
+    const raw = selDevicePreset.value; // "375x667"
+    const [wStr, hStr] = raw.split('x');
+    const width = parseInt(wStr, 10);
+    const height = parseInt(hStr, 10);
+    const tablet = isTabletWidth(width);
+    const optionText = selDevicePreset.options[selDevicePreset.selectedIndex].text;
+    const deviceName = optionText.split('—')[0].trim();
+
+    deviceContainer.className = 'device-container mode-mobile' + (tablet ? ' is-tablet' : '');
+    deviceContainer.style.width = width + 'px';
+    deviceContainer.style.height = height + 'px';
+    deviceLabel.textContent = (tablet ? '📱 ' : '📱 ') + deviceName + ' — ' + width + '×' + height;
+
+    localStorage.setItem(STORAGE_PREFIX + 'device-preset', raw);
+  }
+
   function setDevice(mode) {
     if (mode === 'pc') {
       deviceContainer.className = 'device-container mode-pc';
+      deviceContainer.style.width = '';
+      deviceContainer.style.height = '';
       deviceLabel.textContent = '💻 PC — 100%';
+      selDevicePreset.hidden = true;
       btnPC.classList.add('active');
       btnPC.setAttribute('aria-pressed', 'true');
       btnMobile.classList.remove('active');
       btnMobile.setAttribute('aria-pressed', 'false');
     } else {
-      deviceContainer.className = 'device-container mode-mobile';
-      deviceLabel.textContent = '📱 Móvil — 375 × 667';
+      selDevicePreset.hidden = false;
+      applyDevicePreset();
       btnMobile.classList.add('active');
       btnMobile.setAttribute('aria-pressed', 'true');
       btnPC.classList.remove('active');
       btnPC.setAttribute('aria-pressed', 'false');
     }
+    localStorage.setItem(STORAGE_PREFIX + 'device-mode', mode);
   }
 
   btnPC.addEventListener('click', function () { setDevice('pc'); });
   btnMobile.addEventListener('click', function () { setDevice('mobile'); });
+  selDevicePreset.addEventListener('change', applyDevicePreset);
+
+  // ========================================
+  //  PANEL RESIZABLE (editor ↔ previsualización)
+  // ========================================
+  (function setupResizer() {
+    let dragging = false;
+
+    function clampWidth(px) {
+      const min = 320;
+      const max = mainEl.clientWidth - 320; // deja espacio mínimo a la previsualización
+      return Math.max(min, Math.min(max, px));
+    }
+
+    function onMove(clientX) {
+      const mainRect = mainEl.getBoundingClientRect();
+      const newWidth = clampWidth(clientX - mainRect.left);
+      panelEditor.style.flexBasis = newWidth + 'px';
+    }
+
+    function stopDragging() {
+      if (!dragging) return;
+      dragging = false;
+      panelResizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem(STORAGE_PREFIX + 'editor-width', panelEditor.getBoundingClientRect().width);
+    }
+
+    panelResizer.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      dragging = true;
+      panelResizer.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      onMove(e.clientX);
+    });
+
+    document.addEventListener('mouseup', stopDragging);
+
+    // Soporte táctil (tablets con teclado, pantallas grandes táctiles, etc.)
+    panelResizer.addEventListener('touchstart', function () {
+      dragging = true;
+      panelResizer.classList.add('dragging');
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!dragging || !e.touches[0]) return;
+      onMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    document.addEventListener('touchend', stopDragging);
+
+    // Accesibilidad por teclado: flechas izquierda/derecha con el separador enfocado
+    panelResizer.addEventListener('keydown', function (e) {
+      const current = panelEditor.getBoundingClientRect().width;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        panelEditor.style.flexBasis = clampWidth(current - 20) + 'px';
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        panelEditor.style.flexBasis = clampWidth(current + 20) + 'px';
+      }
+    });
+
+    // Restaurar el último ancho usado
+    const savedWidth = parseFloat(localStorage.getItem(STORAGE_PREFIX + 'editor-width'));
+    if (savedWidth) {
+      panelEditor.style.flexBasis = clampWidth(savedWidth) + 'px';
+    }
+  })();
+
+  // ========================================
+  //  TEMA CLARO / OSCURO
+  //  (la previsualización siempre se fuerza en blanco, ver
+  //  MINIMAL_PREVIEW_CSS e isFullDocument más arriba: esto solo
+  //  cambia la interfaz del editor.)
+  // ========================================
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeToggleIcon.textContent = '☀️';
+      btnThemeToggle.title = 'Cambiar a tema claro (la previsualización siempre queda en blanco)';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      themeToggleIcon.textContent = '🌙';
+      btnThemeToggle.title = 'Cambiar a tema oscuro (la previsualización siempre queda en blanco)';
+    }
+    localStorage.setItem(STORAGE_PREFIX + 'theme', theme);
+  }
+
+  btnThemeToggle.addEventListener('click', function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    applyTheme(isDark ? 'light' : 'dark');
+  });
 
   // ========================================
   //  GLOBAL EVENT WIRING
@@ -677,4 +814,15 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o
   codeEditor.value = STARTER_HTML;
   syncPreview();
 
+  const savedTheme = localStorage.getItem(STORAGE_PREFIX + 'theme');
+  applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
+
+  const savedPreset = localStorage.getItem(STORAGE_PREFIX + 'device-preset');
+  if (savedPreset && [...selDevicePreset.options].some(function (o) { return o.value === savedPreset; })) {
+    selDevicePreset.value = savedPreset;
+  }
+  const savedMode = localStorage.getItem(STORAGE_PREFIX + 'device-mode');
+  setDevice(savedMode === 'mobile' ? 'mobile' : 'pc');
+
 })();
+

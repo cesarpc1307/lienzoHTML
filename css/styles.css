@@ -1,5 +1,5 @@
 /* ============================================
-   VISOR HTML
+   LIENZO HTML
    Stylesheet Principal
    ============================================ */
 
@@ -13,6 +13,7 @@
 :root {
   --bg-app: #f4f5f7;
   --bg-panel: #ffffff;
+  --bg-toolbar: #fafbfc;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --border-subtle: #e2e8f0;
@@ -23,6 +24,9 @@
   --danger: #ef4444;
   --danger-bg: #fef2f2;
   --danger-border: #fecaca;
+  --editor-bg: #ffffff;
+  --editor-text: #1e293b;
+  --editor-placeholder: #94a3b8;
   --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,.08);
   --shadow-lg: 0 10px 30px rgba(0,0,0,.12);
@@ -32,12 +36,38 @@
   --transition: .3s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* ---- Tema oscuro (solo cambia la interfaz; la previsualización
+   siempre se fuerza en blanco desde app.js y #preview-frame) ---- */
+:root[data-theme="dark"] {
+  --bg-app: #14151f;
+  --bg-panel: #1b1c2a;
+  --bg-toolbar: #20222f;
+  --text-primary: #e5e7eb;
+  --text-secondary: #94a3b8;
+  --border-subtle: #2f3242;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-glow: rgba(129, 140, 248, .18);
+  --device-frame: #0b0c14;
+  --danger: #f87171;
+  --danger-bg: #3b1418;
+  --danger-border: #7f1d1d;
+  --editor-bg: #14151f;
+  --editor-text: #e5e7eb;
+  --editor-placeholder: #5b6072;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 34px rgba(0,0,0,.55);
+  --shadow-device: 0 20px 60px rgba(0,0,0,.6), 0 8px 20px rgba(0,0,0,.4);
+}
+
 html, body {
   height: 100%;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-app);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
+  transition: background-color var(--transition), color var(--transition);
 }
 
 button {
@@ -96,6 +126,33 @@ header {
   color: var(--accent);
 }
 
+/* ========== HEADER ACTIONS / THEME TOGGLE ========== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
 /* ========== DEVICE TOGGLE ========== */
 .device-toggle {
   display: flex;
@@ -143,12 +200,52 @@ main {
 
 /* ========== LEFT PANEL — EDITOR ========== */
 .panel-editor {
-  width: 45%;
-  min-width: 380px;
+  flex: 0 0 45%;
+  min-width: 320px;
+  max-width: 80%;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-panel);
+}
+
+/* ========== RESIZER ========== */
+.panel-resizer {
+  flex: 0 0 6px;
+  width: 6px;
+  cursor: col-resize;
+  background: var(--border-subtle);
+  position: relative;
+  transition: background var(--transition);
+}
+
+.panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--text-secondary);
+  opacity: .5;
+}
+
+.panel-resizer:hover,
+.panel-resizer.dragging {
+  background: var(--accent-glow);
+}
+
+.panel-resizer:hover::after,
+.panel-resizer.dragging::after {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.panel-resizer:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* ========== TOOLBAR ========== */
@@ -158,7 +255,7 @@ main {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: #fafbfc;
+  background: var(--bg-toolbar);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -345,20 +442,21 @@ main {
   flex: 1;
   width: 100%;
   padding: 18px 22px;
-  background: #fff;
+  background: var(--editor-bg);
   border: none;
   resize: none;
-  color: var(--text-primary);
+  color: var(--editor-text);
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
   font-size: 13px;
   line-height: 1.65;
   outline: none;
   tab-size: 2;
   overflow-y: auto;
+  transition: background-color var(--transition), color var(--transition);
 }
 
 #code-editor::placeholder {
-  color: #94a3b8;
+  color: var(--editor-placeholder);
 }
 
 #code-editor:focus {
@@ -481,6 +579,17 @@ main {
   background: var(--accent-glow);
   padding: 4px 12px;
   border-radius: 20px;
+  white-space: nowrap;
+}
+
+.preview-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-preset-select {
+  max-width: 220px;
 }
 
 .preview-canvas {
@@ -509,13 +618,16 @@ main {
   box-shadow: var(--shadow-md);
 }
 
-/* Mobile Mode */
+/* Mobile Mode (dimensiones exactas las fija JS según el preset elegido) */
 .device-container.mode-mobile {
-  width: 375px;
-  height: 667px;
   border-radius: 24px;
   border: 12px solid var(--device-frame);
   box-shadow: var(--shadow-device);
+}
+
+.device-container.mode-mobile.is-tablet {
+  border-radius: 14px;
+  border-width: 16px;
 }
 
 .device-container.mode-mobile::before {
@@ -542,6 +654,11 @@ main {
   background: #2d2d3f;
   border-radius: 10px;
   z-index: 2;
+}
+
+.device-container.mode-mobile.is-tablet::before,
+.device-container.mode-mobile.is-tablet::after {
+  display: none;
 }
 
 #preview-frame {
@@ -582,11 +699,16 @@ main {
   }
 
   .panel-editor {
+    flex-basis: 55% !important;
     width: 100%;
     min-width: unset;
-    height: 55%;
+    max-width: unset;
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .panel-resizer {
+    display: none;
   }
 
   .panel-preview {
