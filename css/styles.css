@@ -34,6 +34,14 @@
   --radius: 12px;
   --radius-lg: 16px;
   --transition: .3s cubic-bezier(.4, 0, .2, 1);
+
+  /* ---- Colores de sintaxis (resaltado del código, tema claro) ---- */
+  --tok-punct: #64748b;
+  --tok-tag: #be185d;
+  --tok-attr-name: #b45309;
+  --tok-attr-value: #15803d;
+  --tok-comment: #94a3b8;
+  --tok-doctype: #6366f1;
 }
 
 /* ---- Tema oscuro (solo cambia la interfaz; la previsualización
@@ -59,6 +67,14 @@
   --shadow-md: 0 4px 14px rgba(0,0,0,.4);
   --shadow-lg: 0 10px 34px rgba(0,0,0,.55);
   --shadow-device: 0 20px 60px rgba(0,0,0,.6), 0 8px 20px rgba(0,0,0,.4);
+
+  /* ---- Colores de sintaxis (resaltado del código, tema oscuro) ---- */
+  --tok-punct: #94a3b8;
+  --tok-tag: #f472b6;
+  --tok-attr-name: #fbbf24;
+  --tok-attr-value: #34d399;
+  --tok-comment: #6b7280;
+  --tok-doctype: #a5b4fc;
 }
 
 html, body {
@@ -430,34 +446,78 @@ main {
   gap: 6px;
 }
 
-/* ---- Code Editor ---- */
+/* ---- Code Editor (dos capas superpuestas) ---- */
 .code-editor-wrapper {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  position: relative;
   overflow: hidden;
 }
 
-#code-editor {
-  flex: 1;
-  width: 100%;
+/* Capa decorativa: el HTML resaltado por tipo de token */
+.code-highlight {
+  position: absolute;
+  inset: 0;
+  margin: 0;
   padding: 18px 22px;
+  overflow: hidden;
+  pointer-events: none;
   background: var(--editor-bg);
+  color: var(--editor-text);
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.code-highlight code {
+  font: inherit;
+  color: inherit;
+}
+
+/* Capa real y editable: mismo tamaño/fuente exactos que .code-highlight,
+   pero con el texto transparente — solo se ve el cursor (caret-color),
+   así el color que se percibe es el de la capa de abajo. */
+#code-editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 18px 22px;
+  background: transparent;
   border: none;
   resize: none;
-  color: var(--editor-text);
+  color: transparent;
+  caret-color: var(--editor-text);
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
   font-size: 13px;
   line-height: 1.65;
   outline: none;
   tab-size: 2;
   overflow-y: auto;
-  transition: background-color var(--transition), color var(--transition);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+#code-editor::selection {
+  background: var(--accent-glow);
+  color: transparent;
 }
 
 #code-editor::placeholder {
   color: var(--editor-placeholder);
 }
+
+/* ---- Colores de sintaxis por tipo de token ---- */
+.tok-tag       { color: var(--tok-tag); font-weight: 600; }
+.tok-attr-name { color: var(--tok-attr-name); }
+.tok-attr-value{ color: var(--tok-attr-value); }
+.tok-punct     { color: var(--tok-punct); }
+.tok-comment   { color: var(--tok-comment); font-style: italic; }
+.tok-doctype   { color: var(--tok-doctype); }
+.tok-text      { color: var(--editor-text); }
 
 #code-editor:focus {
   box-shadow: inset 0 0 0 2px var(--accent-glow);
@@ -592,21 +652,60 @@ main {
   max-width: 220px;
 }
 
+/* ========== ZOOM BAR (vista Móvil/Tablet) ========== */
+.preview-zoom-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.zoom-slider {
+  width: 140px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.zoom-value {
+  min-width: 42px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
 .preview-canvas {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 24px;
   overflow: auto;
 }
 
+/* Contenedor que reserva el espacio EXACTO del dispositivo ya escalado
+   (ancho/alto los fija JS), para que el scroll y el centrado del
+   .preview-canvas se calculen bien sin importar el nivel de zoom. */
+.device-scale-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.device-scale-wrapper.is-pc {
+  width: 100%;
+  height: 100%;
+  align-self: stretch;
+}
+
 /* ========== DEVICE CONTAINER ========== */
 .device-container {
-  transition: all .45s cubic-bezier(.4, 0, .2, 1);
+  transition: box-shadow .3s ease, border-color .3s ease, border-width .3s ease;
   background: #fff;
   overflow: hidden;
   position: relative;
+  transform-origin: top left;
 }
 
 /* PC Mode */
@@ -618,7 +717,8 @@ main {
   box-shadow: var(--shadow-md);
 }
 
-/* Mobile Mode (dimensiones exactas las fija JS según el preset elegido) */
+/* Mobile Mode (dimensiones exactas y el "transform: scale()" del zoom
+   los fija JS según el preset y el nivel de zoom elegidos) */
 .device-container.mode-mobile {
   border-radius: 24px;
   border: 12px solid var(--device-frame);

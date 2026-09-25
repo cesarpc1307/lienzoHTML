@@ -6,6 +6,28 @@
   <meta name="description" content="Lienzo HTML — edita código HTML con una barra de herramientas y previsualízalo en tiempo real en PC, tablet y celular, respetando tu diseño original." />
   <title>Lienzo HTML</title>
 
+  <!-- Seguridad: ver README.md ("Notas de seguridad") para la explicación
+       completa. En resumen: no usamos una política CSP aquí porque
+       cualquier política en este documento se filtra también al iframe
+       de previsualización (vía srcdoc) y bloquearía los estilos e
+       inline-scripts del HTML que el usuario pega — que es la razón de
+       ser de esta herramienta. El aislamiento real de seguridad lo da
+       el atributo sandbox="allow-scripts" del iframe (sin
+       "allow-same-origin"), no una CSP. -->
+  <meta http-equiv="Permissions-Policy"
+    content="geolocation=(), microphone=(), camera=(), payment=(), usb=()" />
+
+  <!-- Favicon / marcadores -->
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="shortcut icon" href="icons/favicon-32.png" />
+
+  <!-- Instalación como app (PWA) -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6366f1" />
+
   <!-- App Styles -->
   <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -114,7 +136,13 @@
         </div>
 
         <!-- Code HTML Editor (única fuente de verdad) -->
+        <!-- El <pre><code> de abajo es decorativo (aria-hidden): muestra el
+             mismo texto coloreado por tipo de token (etiqueta, atributo,
+             valor, comentario). El textarea sigue siendo el real: se edita,
+             selecciona y copia normalmente; solo su texto se vuelve
+             transparente para que se vea el resaltado de atrás. -->
         <div class="code-editor-wrapper">
+          <pre class="code-highlight" id="code-highlight" aria-hidden="true"><code id="code-highlight-content"></code></pre>
           <textarea
             id="code-editor"
             spellcheck="false"
@@ -160,14 +188,25 @@
           </div>
         </div>
 
-        <div class="preview-canvas">
-          <div class="device-container mode-pc" id="device-container">
-            <iframe
-              id="preview-frame"
-              title="Previsualización del contenido HTML"
-              sandbox="allow-scripts"
-              referrerpolicy="no-referrer"
-            ></iframe>
+        <!-- Controles de zoom: solo relevantes en vista Móvil/Tablet -->
+        <div class="preview-zoom-bar" id="zoom-bar" hidden>
+          <button type="button" class="tb-btn tb-btn-small" id="btn-zoom-out" title="Alejar">−</button>
+          <input type="range" id="zoom-slider" class="zoom-slider" min="25" max="150" step="5" value="100" title="Zoom" aria-label="Nivel de zoom" />
+          <button type="button" class="tb-btn tb-btn-small" id="btn-zoom-in" title="Acercar">+</button>
+          <span class="zoom-value" id="zoom-value">100%</span>
+          <button type="button" class="tb-btn tb-btn-small" id="btn-zoom-fit" title="Ajustar automáticamente para que el dispositivo completo entre en la ventana">🔳 Auto-ajustar</button>
+        </div>
+
+        <div class="preview-canvas" id="preview-canvas">
+          <div class="device-scale-wrapper" id="device-scale-wrapper">
+            <div class="device-container mode-pc" id="device-container">
+              <iframe
+                id="preview-frame"
+                title="Previsualización del contenido HTML"
+                sandbox="allow-scripts"
+                referrerpolicy="no-referrer"
+              ></iframe>
+            </div>
           </div>
         </div>
       </section>
