@@ -51,6 +51,10 @@
         <button type="button" id="btn-theme-toggle" class="theme-toggle-btn" title="Cambiar entre tema claro y oscuro (la previsualización siempre queda en blanco)">
           <span id="theme-toggle-icon">🌙</span>
         </button>
+
+        <button type="button" id="btn-info" class="theme-toggle-btn" title="Información del proyecto">
+          ℹ️
+        </button>
       </div>
     </header>
 
@@ -135,21 +139,9 @@
           </div>
         </div>
 
-        <!-- Code HTML Editor (única fuente de verdad) -->
-        <!-- El <pre><code> de abajo es decorativo (aria-hidden): muestra el
-             mismo texto coloreado por tipo de token (etiqueta, atributo,
-             valor, comentario). El textarea sigue siendo el real: se edita,
-             selecciona y copia normalmente; solo su texto se vuelve
-             transparente para que se vea el resaltado de atrás. -->
+        <!-- Code HTML Editor (CodeMirror 6) -->
         <div class="code-editor-wrapper">
-          <pre class="code-highlight" id="code-highlight" aria-hidden="true"><code id="code-highlight-content"></code></pre>
-          <textarea
-            id="code-editor"
-            spellcheck="false"
-            autocapitalize="off"
-            autocomplete="off"
-            placeholder="Escribe o pega tu código HTML aquí. Se previsualizará tal cual, respetando tu diseño…"
-          ></textarea>
+          <div id="code-editor"></div>
         </div>
       </section>
 
@@ -258,6 +250,53 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== MODAL: Información del Proyecto ===== -->
+  <div class="modal-overlay" id="modal-info" hidden>
+    <div class="modal modal-info-card" role="dialog" aria-modal="true" aria-labelledby="modal-info-title">
+      <div class="modal-info-header">
+        <div class="logo-icon modal-logo" aria-hidden="true">⟨⟩</div>
+        <div>
+          <h2 id="modal-info-title">Lienzo HTML <span class="badge-v2">v2.0</span></h2>
+          <p class="modal-subtitle">Proyecto Libre • Editor HTML en Vivo</p>
+        </div>
+      </div>
+
+      <div class="modal-info-body">
+        <p class="info-desc">
+          Herramienta ligera, gratuita y de código abierto para edición y previsualización de código HTML en tiempo real en PC, tablet y celular.
+        </p>
+
+        <div class="info-credits-card">
+          <div class="credit-item">
+            <span class="credit-icon">👨‍💻</span>
+            <div class="credit-content">
+              <span class="credit-label">Desarrollado por</span>
+              <strong class="credit-author">Ing. César Pineda</strong>
+              <a href="https://github.com/cesarpc1307" target="_blank" rel="noopener noreferrer" class="credit-link">
+                https://github.com/cesarpc1307 ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="credit-item">
+            <span class="credit-icon">⚡</span>
+            <div class="credit-content">
+              <span class="credit-label">Metodología & Creación</span>
+              <span class="credit-desc">Desarrollado mediante <strong>Vibe Coding</strong> & Asistencia de <strong>Inteligencia Artificial</strong>.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="tb-btn tb-btn-primary" id="btn-info-close">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CodeMirror 6 (standalone bundle, sin CDN) -->
+  <script src="js/codemirror-bundle.js"></script>
 
   <!-- App Logic -->
   <script src="js/app.js"></script>

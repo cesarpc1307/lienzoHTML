@@ -6,14 +6,15 @@ Editor de HTML con previsualización en vivo para **PC, tablet y celular**. Escr
 
 ## ✨ Características
 
-- **Editor de código con resaltado de sintaxis** (etiquetas, atributos, valores, comentarios), en tema claro y oscuro.
+- **Editor de código profesional** con [CodeMirror 6](https://codemirror.net/): resaltado de sintaxis real para HTML/CSS/JS, números de línea, plegado de código, matcheo de paréntesis/etiquetas, auto-cierre de brackets y búsqueda (Ctrl+F).
+- **Undo / Redo completo** (Ctrl+Z / Ctrl+Y): cada cambio se registra en el historial, incluyendo los que se hacen desde la barra de herramientas.
 - **Barra de herramientas** que aplica formato envolviendo tu selección: negrita, cursiva, subrayado, tachado, encabezados, listas, color de texto/fondo (con selector nativo + paleta), enlaces y tablas configurables (filas/columnas a elegir, más un botón para añadir filas a una tabla existente).
 - **Previsualización en tiempo real** para PC, y para celular/tablet con más de 15 resoluciones reales (iPhone, Samsung, Pixel, iPad, etc.).
 - **Zoom + auto-ajuste** en la vista móvil, para que dispositivos altos (como el iPhone Pro Max) entren completos en la ventana, con control manual de zoom (25%–150%).
 - **Panel redimensionable** entre el editor y la previsualización.
 - **Tema claro / oscuro** para la interfaz (la previsualización siempre se mantiene en blanco, fiel al diseño real de tu HTML).
 - **Instalable como aplicación** (PWA): en Chrome/Edge aparece el ícono de instalar en la barra de direcciones; funciona sin conexión una vez cargada.
-- **Sin dependencias externas**: no usa ningún CDN ni librería de terceros. Todo el código es propio.
+- **Sin CDN ni dependencias externas en tiempo de ejecución**: CodeMirror 6 se incluye como un bundle standalone (`js/codemirror-bundle.js`), generado una sola vez con esbuild. La app es 100% autocontenida.
 
 ## 🚀 Cómo usarlo
 
@@ -28,23 +29,61 @@ Solo abre `index.html` en el navegador (doble clic) o publícalo en GitHub Pages
 
 No necesitas ningún paso de build: son archivos estáticos.
 
+## ⌨️ Atajos de teclado
+
+| Atajo | Acción |
+|---|---|
+| `Ctrl+Z` | Deshacer |
+| `Ctrl+Y` / `Ctrl+Shift+Z` | Rehacer |
+| `Ctrl+B` | Negrita (`<strong>`) |
+| `Ctrl+I` | Cursiva (`<em>`) |
+| `Ctrl+U` | Subrayado (`<u>`) |
+| `Ctrl+F` | Buscar y reemplazar |
+| `Tab` | Indentar |
+| `Shift+Tab` | Des-indentar |
+| `Ctrl+/` | Comentar/descomentar |
+
 ## 📁 Estructura del proyecto
 
 ```
 Lienzo HTML/
-├── index.html          # La aplicación (editor + toolbar + previsualización)
-├── manifest.json         # Metadatos para poder "instalar" la app
-├── sw.js                  # Service worker (caché para uso sin conexión)
+├── index.html                # La aplicación (editor + toolbar + previsualización)
+├── manifest.json             # Metadatos para poder "instalar" la app
+├── sw.js                     # Service worker (caché para uso sin conexión)
 ├── css/
-│   └── styles.css         # Estilos de la interfaz (tema claro/oscuro incluido)
+│   └── styles.css            # Estilos de la interfaz (tema claro/oscuro incluido)
 ├── js/
-│   └── app.js              # Toda la lógica: editor, resaltado, zoom, tema, etc.
+│   ├── codemirror-bundle.js  # CodeMirror 6 standalone (generado con esbuild)
+│   └── app.js                # Toda la lógica: editor CM6, toolbar, zoom, tema, etc.
 └── icons/
     ├── favicon.svg
     ├── favicon-16.png / favicon-32.png
     ├── apple-touch-icon.png
     ├── icon-192.png / icon-512.png
     └── icon-512-maskable.png
+```
+
+## 🔧 Regenerar el bundle de CodeMirror (solo si necesitas actualizar la versión)
+
+En circunstancias normales **no necesitas hacer esto**. El bundle ya está incluido en el repositorio. Solo es necesario si quieres actualizar CodeMirror a una versión más reciente.
+
+```bash
+# En un directorio temporal
+mkdir cm6build && cd cm6build
+npm init -y
+npm install codemirror @codemirror/lang-html @codemirror/state @codemirror/view \
+            @codemirror/commands @codemirror/language @lezer/highlight esbuild
+
+# Crear cm-entry.js con las importaciones necesarias (ver el archivo
+# que se usó en el build original, o el comentario al inicio de app.js)
+
+npx esbuild cm-entry.js --bundle --format=iife --minify --target=es2018 \
+    --outfile=../js/codemirror-bundle.js
+
+# Limpiar
+cd .. && rm -rf cm6build
+
+# No olvidar subir CACHE_VERSION en sw.js
 ```
 
 ## 🔒 Notas de seguridad
@@ -71,6 +110,25 @@ Safari (iOS/macOS) no dispara este ícono automático; ahí se instala manualmen
 
 Si actualizas `index.html`, `css/styles.css` o `js/app.js`, sube el número de versión en la primera línea útil de `sw.js` (`CACHE_VERSION`) para que los navegadores descarten la versión vieja cacheada y todos vean los cambios.
 
+## 📝 Historial de versiones
+
+### v2.0 — CodeMirror 6
+- Editor reemplazado por CodeMirror 6 (bundle standalone, sin CDN).
+- **Undo/Redo completo** con Ctrl+Z / Ctrl+Y.
+- Números de línea, plegado de código, matcheo de paréntesis.
+- Búsqueda y reemplazo integrados (Ctrl+F).
+- Auto-cierre de brackets y etiquetas.
+- Resaltado de sintaxis real (parser HTML con soporte CSS/JS embebido).
+- Línea activa resaltada visualmente.
+- Comentar/descomentar con Ctrl+/.
+- Toda la barra de herramientas conservada y funcional.
+
+### v1.0 — Editor original
+- Editor basado en textarea con resaltado de sintaxis propio.
+- Barra de herramientas con formato, colores, listas, tablas, enlaces.
+- Previsualización en tiempo real con soporte de dispositivos móviles.
+- Tema claro/oscuro, panel redimensionable, PWA.
+
 ## 🗒️ Notas
 
 - Ningún dato de tu código se envía a ningún servidor. Las únicas cosas que se guardan en tu navegador (`localStorage`) son preferencias de interfaz: tema, ancho del panel, dispositivo y zoom elegidos. Nunca tu HTML.
@@ -79,4 +137,8 @@ Si actualizas `index.html`, `css/styles.css` o `js/app.js`, sube el número de v
 
 ---
 
-Hecho con HTML, CSS y JavaScript puros. Sin frameworks, sin build, sin dependencias.
+## 👨‍💻 Créditos y Autoría
+
+- **Desarrollado por:** Ing. César Pineda ([github.com/cesarpc1307](https://github.com/cesarpc1307))
+- **Metodología:** Proyecto libre desarrollado mediante **Vibe Coding** y Asistencia de **Inteligencia Artificial**.
+- **Tecnologías:** HTML5, CSS3, JavaScript ES6+ y [CodeMirror 6](https://codemirror.net/). Sin frameworks pesados, 100% libre y ejecutable de forma local.

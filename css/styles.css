@@ -35,13 +35,6 @@
   --radius-lg: 16px;
   --transition: .3s cubic-bezier(.4, 0, .2, 1);
 
-  /* ---- Colores de sintaxis (resaltado del código, tema claro) ---- */
-  --tok-punct: #64748b;
-  --tok-tag: #be185d;
-  --tok-attr-name: #b45309;
-  --tok-attr-value: #15803d;
-  --tok-comment: #94a3b8;
-  --tok-doctype: #6366f1;
 }
 
 /* ---- Tema oscuro (solo cambia la interfaz; la previsualización
@@ -68,13 +61,6 @@
   --shadow-lg: 0 10px 34px rgba(0,0,0,.55);
   --shadow-device: 0 20px 60px rgba(0,0,0,.6), 0 8px 20px rgba(0,0,0,.4);
 
-  /* ---- Colores de sintaxis (resaltado del código, tema oscuro) ---- */
-  --tok-punct: #94a3b8;
-  --tok-tag: #f472b6;
-  --tok-attr-name: #fbbf24;
-  --tok-attr-value: #34d399;
-  --tok-comment: #6b7280;
-  --tok-doctype: #a5b4fc;
 }
 
 html, body {
@@ -446,81 +432,34 @@ main {
   gap: 6px;
 }
 
-/* ---- Code Editor (dos capas superpuestas) ---- */
+/* ---- Code Editor (CodeMirror 6) ---- */
 .code-editor-wrapper {
   flex: 1;
   position: relative;
   overflow: hidden;
 }
 
-/* Capa decorativa: el HTML resaltado por tipo de token */
-.code-highlight {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 18px 22px;
-  overflow: hidden;
-  pointer-events: none;
-  background: var(--editor-bg);
-  color: var(--editor-text);
-  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
-  font-size: 13px;
-  line-height: 1.65;
-  tab-size: 2;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  transition: background-color var(--transition), color var(--transition);
-}
-
-.code-highlight code {
-  font: inherit;
-  color: inherit;
-}
-
-/* Capa real y editable: mismo tamaño/fuente exactos que .code-highlight,
-   pero con el texto transparente — solo se ve el cursor (caret-color),
-   así el color que se percibe es el de la capa de abajo. */
 #code-editor {
-  position: absolute;
-  inset: 0;
-  width: 100%;
   height: 100%;
-  padding: 18px 22px;
-  background: transparent;
-  border: none;
-  resize: none;
-  color: transparent;
-  caret-color: var(--editor-text);
-  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
-  font-size: 13px;
-  line-height: 1.65;
+}
+
+.code-editor-wrapper .cm-editor {
+  height: 100%;
   outline: none;
-  tab-size: 2;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 
-#code-editor::selection {
-  background: var(--accent-glow);
-  color: transparent;
+.code-editor-wrapper .cm-editor.cm-focused {
+  outline: none;
 }
 
-#code-editor::placeholder {
+.code-editor-wrapper .cm-scroller {
+  overflow: auto;
+}
+
+/* Placeholder */
+.cm-editor .cm-placeholder {
   color: var(--editor-placeholder);
-}
-
-/* ---- Colores de sintaxis por tipo de token ---- */
-.tok-tag       { color: var(--tok-tag); font-weight: 600; }
-.tok-attr-name { color: var(--tok-attr-name); }
-.tok-attr-value{ color: var(--tok-attr-value); }
-.tok-punct     { color: var(--tok-punct); }
-.tok-comment   { color: var(--tok-comment); font-style: italic; }
-.tok-doctype   { color: var(--tok-doctype); }
-.tok-text      { color: var(--editor-text); }
-
-#code-editor:focus {
-  box-shadow: inset 0 0 0 2px var(--accent-glow);
+  font-style: italic;
 }
 
 /* ========== MODALS ========== */
@@ -552,6 +491,120 @@ main {
   font-weight: 700;
   margin-bottom: 16px;
   color: var(--text-primary);
+}
+
+/* ---- Modal Info Card ---- */
+.modal-info-card {
+  width: 440px;
+}
+
+.modal-info-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.modal-logo {
+  width: 46px;
+  height: 46px;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.modal-info-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-v2 {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--border-subtle);
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.modal-info-body {
+  margin-bottom: 18px;
+}
+
+.info-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.info-credits-card {
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.credit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.credit-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.credit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.credit-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.credit-author {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.credit-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.credit-link:hover {
+  text-decoration: underline;
+}
+
+.credit-desc {
+  color: var(--text-primary);
+  line-height: 1.4;
 }
 
 .modal-field {
@@ -770,19 +823,20 @@ main {
 }
 
 /* ========== SCROLLBARS ========== */
-#code-editor::-webkit-scrollbar,
+.cm-scroller::-webkit-scrollbar,
 .preview-canvas::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
-#code-editor::-webkit-scrollbar-track,
+.cm-scroller::-webkit-scrollbar-track,
 .preview-canvas::-webkit-scrollbar-track {
   background: transparent;
 }
 
-#code-editor::-webkit-scrollbar-thumb,
+.cm-scroller::-webkit-scrollbar-thumb,
 .preview-canvas::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, .1);
+  background: rgba(0, 0, 0, .12);
   border-radius: 3px;
 }
 

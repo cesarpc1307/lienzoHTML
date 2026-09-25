@@ -10,12 +10,13 @@
    y no se queden atascados mostrando una versión anterior.
    ============================================ */
 
-const CACHE_VERSION = 'lienzo-html-v2';
+const CACHE_VERSION = 'lienzo-html-v3';
 
 const APP_SHELL = [
   './',
   './index.html',
   './css/styles.css',
+  './js/codemirror-bundle.js',
   './js/app.js',
   './manifest.json',
   './icons/icon-192.png',
