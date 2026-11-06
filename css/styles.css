@@ -705,6 +705,42 @@ main {
   max-width: 220px;
 }
 
+/* ---- Inspect mode button ---- */
+.tb-btn-inspect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-app);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.tb-btn-inspect:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.tb-btn-inspect.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.tb-btn-inspect.active:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
 /* ========== ZOOM BAR (vista Móvil/Tablet) ========== */
 .preview-zoom-bar {
   display: flex;

@@ -77,6 +77,8 @@
   var btnZoomIn  = document.getElementById('btn-zoom-in');
   var btnZoomOut = document.getElementById('btn-zoom-out');
   var btnZoomFit = document.getElementById('btn-zoom-fit');
+  var btnInspect  = document.getElementById('btn-inspect');
+  var inspectModeActive = false;
 
   var STORAGE_PREFIX = 'lienzo-html-';
 
@@ -350,20 +352,144 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o\n\
     'body{margin:0;background:#ffffff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}' +
     'img,video{max-width:100%;height:auto;}</style>';
 
+  // ---- Script de inspección inyectado en el iframe ----
+  // Se comunica con la app principal vía postMessage (compatible con
+  // sandbox="allow-scripts" sin allow-same-origin: mantiene la seguridad).
+  var INSPECTOR_SCRIPT = [
+    '<script>',
+    '(function(){',
+    'var active=false,ov=null,lbl=null;',
+    'function mkOv(){',
+    '  ov=document.createElement("div");',
+    '  ov.style.cssText="position:absolute;pointer-events:none;border:2px solid #6366f1;background:rgba(99,102,241,.08);z-index:99999;display:none;transition:all .1s ease;border-radius:3px;";',
+    '  document.body.appendChild(ov);',
+    '  lbl=document.createElement("div");',
+    '  lbl.style.cssText="position:absolute;pointer-events:none;background:#6366f1;color:#fff;font-size:10px;font-weight:700;font-family:monospace;padding:2px 7px;border-radius:3px;z-index:100000;display:none;white-space:nowrap;letter-spacing:.02em;";',
+    '  document.body.appendChild(lbl);',
+    '}',
+    'window.addEventListener("message",function(e){',
+    '  if(e.data&&e.data.type==="lienzo-set-inspect"){',
+    '    active=e.data.enabled;',
+    '    document.body.style.cursor=active?"crosshair":"";',
+    '    if(!active){if(ov)ov.style.display="none";if(lbl)lbl.style.display="none";}',
+    '  }',
+    '});',
+    'document.addEventListener("mouseover",function(e){',
+    '  if(!active)return;',
+    '  var t=e.target;',
+    '  if(t===document.body||t===document.documentElement)return;',
+    '  if(!ov)mkOv();',
+    '  var r=t.getBoundingClientRect();',
+    '  ov.style.display="block";',
+    '  ov.style.top=(r.top+window.scrollY)+"px";',
+    '  ov.style.left=(r.left+window.scrollX)+"px";',
+    '  ov.style.width=Math.max(r.width,2)+"px";',
+    '  ov.style.height=Math.max(r.height,2)+"px";',
+    '  lbl.style.display="block";',
+    '  var txt=t.tagName.toLowerCase();',
+    '  if(t.id)txt+="#"+t.id;',
+    '  else if(t.className&&typeof t.className==="string"&&t.className.trim())txt+="."+t.className.trim().split(" ")[0];',
+    '  lbl.textContent=txt;',
+    '  var lblTop=r.top+window.scrollY-20;',
+    '  lbl.style.top=(lblTop<2?r.bottom+window.scrollY+2:lblTop)+"px";',
+    '  lbl.style.left=(r.left+window.scrollX)+"px";',
+    '},true);',
+    'document.addEventListener("mouseout",function(e){',
+    '  if(!active)return;',
+    '  if(ov)ov.style.display="none";',
+    '  if(lbl)lbl.style.display="none";',
+    '},true);',
+    'document.addEventListener("click",function(e){',
+    '  if(!active)return;',
+    '  e.preventDefault();e.stopPropagation();',
+    '  var el=e.target;',
+    '  if(el===document.body||el===document.documentElement)return;',
+    '  var p=el.getAttribute("data-l");',
+    '  if(!p){var anc=el.closest("[data-l]");if(anc)p=anc.getAttribute("data-l");}',
+    '  if(p!=null)parent.postMessage({type:"lienzo-inspect-click",pos:parseInt(p,10)},"*");',
+    '},true);',
+    '})();',
+    '<' + '/script>'
+  ].join('');
+
+  // ---- Anotación de posiciones de código fuente en el HTML ----
+  // Añade data-l="pos" a cada etiqueta de apertura, donde pos es la
+  // posición (offset de carácter) en el código del editor. Esto permite
+  // que el script de inspección reporte la ubicación exacta al hacer clic.
+  // Se omiten las anotaciones dentro de contenido <script>, <style> y
+  // comentarios HTML para no alterar su funcionamiento.
+  function annotateWithPositions(html) {
+    if (!html) return html;
+
+    var skipRanges = [];
+
+    // Contenido de <script> y <style>: no anotar etiquetas dentro
+    var scriptStyleRe = /<(script|style)([\s>])[\s\S]*?<\/\1>/gi;
+    var m;
+    while ((m = scriptStyleRe.exec(html)) !== null) {
+      var openEnd = html.indexOf('>', m.index);
+      if (openEnd !== -1) {
+        skipRanges.push([openEnd + 1, m.index + m[0].lastIndexOf('</')]);
+      }
+    }
+
+    // Comentarios HTML
+    var commentRe = /<!--[\s\S]*?-->/g;
+    while ((m = commentRe.exec(html)) !== null) {
+      skipRanges.push([m.index, m.index + m[0].length]);
+    }
+
+    function isSkipped(pos) {
+      for (var i = 0; i < skipRanges.length; i++) {
+        if (pos >= skipRanges[i][0] && pos < skipRanges[i][1]) return true;
+      }
+      return false;
+    }
+
+    var result = '';
+    var lastIdx = 0;
+    var tagRe = /<([a-zA-Z][a-zA-Z0-9-]*)([\s>\/])/g;
+
+    while ((m = tagRe.exec(html)) !== null) {
+      if (isSkipped(m.index)) continue;
+      result += html.slice(lastIdx, m.index);
+      result += '<' + m[1] + ' data-l="' + m.index + '"' + m[2];
+      lastIdx = m.index + m[0].length;
+    }
+    result += html.slice(lastIdx);
+    return result;
+  }
+
   function isFullDocument(html) {
     return /<!doctype/i.test(html) || /<html[\s>]/i.test(html);
   }
 
   function buildPreviewDocument(html) {
     if (!html || !html.trim()) {
-      return '<!DOCTYPE html><html><head><meta charset="UTF-8">' + MINIMAL_PREVIEW_CSS + '</head><body></body></html>';
+      return '<!DOCTYPE html><html><head><meta charset="UTF-8">' + MINIMAL_PREVIEW_CSS +
+             '</head><body>' + INSPECTOR_SCRIPT + '</body></html>';
     }
+    var annotated = annotateWithPositions(html);
     if (isFullDocument(html)) {
-      // Documento completo pegado por el usuario: se respeta tal cual,
-      // sin envolver ni inyectar estilos adicionales.
-      return html;
+      // Documento completo: inyectar el inspector antes de </body>
+      var bodyClose = annotated.toLowerCase().lastIndexOf('</body>');
+      if (bodyClose !== -1) {
+        return annotated.slice(0, bodyClose) + INSPECTOR_SCRIPT + annotated.slice(bodyClose);
+      }
+      return annotated + INSPECTOR_SCRIPT;
     }
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8">' + MINIMAL_PREVIEW_CSS + '</head><body>' + html + '</body></html>';
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8">' + MINIMAL_PREVIEW_CSS +
+           '</head><body>' + annotated + INSPECTOR_SCRIPT + '</body></html>';
+  }
+
+  // Envía el estado del modo inspección al iframe vía postMessage
+  // (seguro: funciona con sandbox sin allow-same-origin)
+  function sendInspectState(enabled) {
+    try {
+      previewFrame.contentWindow.postMessage(
+        { type: 'lienzo-set-inspect', enabled: enabled }, '*'
+      );
+    } catch (e) { /* iframe puede no estar listo aún */ }
   }
 
   var debounceTimer = null;
@@ -372,6 +498,13 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o\n\
     // estilos e inline-scripts) se muestra tal cual. El sandbox del
     // iframe (sin allow-same-origin) sigue aislándolo del resto de la app.
     previewFrame.srcdoc = buildPreviewDocument(view.state.doc.toString());
+    // Reactivar el modo inspección tras cada recarga del iframe
+    if (inspectModeActive) {
+      previewFrame.addEventListener('load', function onLoad() {
+        previewFrame.removeEventListener('load', onLoad);
+        sendInspectState(true);
+      });
+    }
   }
 
   function scheduleSyncPreview() {
@@ -1162,6 +1295,45 @@ herramientas para aplicar <strong>negrita</strong>, <em>cursiva</em> o\n\
   // ========================================
   btnClearAll.addEventListener('click', clearAll);
   btnCopy.addEventListener('click', copyHTML);
+
+  // ========================================
+  //  INSPECT MODE (clic en previsualización → ir a línea de código)
+  // ========================================
+  function toggleInspectMode() {
+    inspectModeActive = !inspectModeActive;
+    btnInspect.classList.toggle('active', inspectModeActive);
+    btnInspect.title = inspectModeActive
+      ? 'Desactivar modo inspección'
+      : 'Modo inspección: clic en un elemento de la previsualización para ir a su línea de código';
+    sendInspectState(inspectModeActive);
+  }
+
+  btnInspect.addEventListener('click', toggleInspectMode);
+
+  // Recibir clics de inspección desde el iframe (vía postMessage seguro)
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.type !== 'lienzo-inspect-click') return;
+    var pos = e.data.pos;
+    var doc = getDoc();
+    if (isNaN(pos) || pos < 0 || pos >= doc.length) return;
+
+    // Seleccionar la etiqueta de apertura completa (<tag ...>)
+    var tagEnd = doc.indexOf('>', pos);
+    if (tagEnd !== -1 && (tagEnd - pos) < 500) {
+      view.dispatch({
+        selection: { anchor: pos, head: tagEnd + 1 },
+        scrollIntoView: true,
+      });
+    } else {
+      // Fallback: seleccionar toda la línea
+      var line = view.state.doc.lineAt(pos);
+      view.dispatch({
+        selection: { anchor: line.from, head: line.to },
+        scrollIntoView: true,
+      });
+    }
+    view.focus();
+  });
 
   // ========================================
   //  INSTALACIÓN COMO APP (PWA)
